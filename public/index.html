@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Banana Bank</title>
+  <meta name="description" content="A push-your-luck puzzle game powered by the Banana API.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="logo" href="/" aria-label="Banana Bank home">Banana Bank</a>
+    <div class="topbar__right" id="session" hidden>
+      <button id="btn-sound" class="icon-btn" type="button" aria-pressed="true" aria-label="Sound on">🔊</button>
+      <div class="chip"><span id="chip-avatar" aria-hidden="true"></span><span id="chip-name"></span></div>
+      <button id="btn-logout" class="link-btn" type="button">Log out</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- AUTH -->
+    <section id="screen-auth" class="screen screen--auth" hidden>
+      <div class="auth-intro">
+        <h1 class="display">How greedy<br>are you?</h1>
+        <p>Solve banana puzzles to grow your pot. Cash out to keep it, or push on for a bigger multiplier. One wrong answer and the pot is gone.</p>
+        <ul class="rules">
+          <li>Each solve grows the pot and the multiplier.</li>
+          <li>Cashing out banks the pot but resets your chain.</li>
+          <li>Every 5th puzzle is a Gold Banana worth triple.</li>
+          <li>3 busted pots lock the vault. One shield saves a pot.</li>
+        </ul>
+      </div>
+
+      <div class="frame auth-card">
+        <div class="tabs" role="tablist">
+          <button class="tab is-active" role="tab" id="tab-login" aria-selected="true" aria-controls="auth-form" type="button">Log in</button>
+          <button class="tab" role="tab" id="tab-register" aria-selected="false" aria-controls="auth-form" type="button">Open account</button>
+        </div>
+        <form id="auth-form" class="form" autocomplete="on" novalidate>
+          <label for="f-username">Username</label>
+          <input id="f-username" name="username" type="text" autocomplete="username" maxlength="16" required>
+          <label for="f-password">Password</label>
+          <input id="f-password" name="password" type="password" autocomplete="current-password" minlength="6" maxlength="72" required>
+          <fieldset id="avatar-picker" class="avatars" hidden>
+            <legend>Pick your monkey</legend>
+            <div id="avatar-options" class="avatars__grid"></div>
+          </fieldset>
+          <p id="auth-error" class="form__error" role="alert" hidden></p>
+          <button id="auth-submit" class="btn btn--gold" type="submit">Log in</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- HOME -->
+    <section id="screen-home" class="screen screen--home" hidden>
+      <div class="home-main">
+        <div class="frame hero">
+          <div class="hero__inner">
+            <p class="hero__hello" id="hello"></p>
+            <h2 class="display hero__title">The vault is open.</h2>
+            <button id="btn-play" class="btn btn--gold btn--xl" type="button">Enter the vault</button>
+            <p id="home-error" class="form__error" role="alert" hidden></p>
+          </div>
+        </div>
+
+        <dl class="stats" id="stats"></dl>
+
+        <section aria-labelledby="h-badges">
+          <h3 id="h-badges" class="panel-title">Badges</h3>
+          <ul id="badges" class="badges"></ul>
+        </section>
+      </div>
+
+      <aside class="home-side">
+        <section class="panel" aria-labelledby="h-board">
+          <h3 id="h-board" class="panel-title">Richest monkeys</h3>
+          <ol id="leaderboard" class="board"></ol>
+        </section>
+        <section class="panel" aria-labelledby="h-feed">
+          <h3 id="h-feed" class="panel-title">Vault gossip</h3>
+          <ul id="feed" class="feed" aria-live="polite"></ul>
+        </section>
+      </aside>
+    </section>
+
+    <!-- PLAY -->
+    <section id="screen-play" class="screen screen--play" hidden>
+      <div class="hud" aria-label="Run status">
+        <div class="hud__pot">
+          <span class="hud__label">Pot (at risk)</span>
+          <span class="hud__big" id="hud-pot">0</span>
+          <span class="hud__sub" id="hud-mult"></span>
+        </div>
+        <div class="hud__bank">
+          <span class="hud__label">Banked (safe)</span>
+          <span class="hud__mid" id="hud-banked">0</span>
+        </div>
+        <div class="hud__row">
+          <div class="hud__cell"><span class="hud__label">Chain</span><b id="hud-chain">0</b></div>
+          <div class="hud__cell"><span class="hud__label">Strikes</span><span class="strikes" id="hud-strikes" aria-live="polite"></span></div>
+          <div class="hud__cell"><span class="hud__label">Shield</span><span id="hud-shield" class="shield"></span></div>
+        </div>
+      </div>
+
+      <div class="frame stage" id="stage" data-gold="false">
+        <div class="timer" id="timer" data-state="ok" role="progressbar" aria-label="Time left" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+          <div class="timer__fill" id="timer-fill"></div>
+        </div>
+        <div class="puzzle" id="puzzle">
+          <p id="puzzle-tag" class="puzzle__tag" hidden></p>
+          <img id="puzzle-img" alt="Banana puzzle. Work out the missing digit." hidden>
+          <p id="puzzle-status" class="puzzle__status">Opening the safe…</p>
+          <div id="flash" class="flash" data-kind="" aria-live="assertive"></div>
+        </div>
+        <div class="numpad" id="numpad" role="group" aria-label="Answer digits"></div>
+        <button id="btn-cash" class="btn btn--cash" type="button" disabled>Cash out</button>
+        <div class="actions">
+          <button id="btn-quit" class="btn btn--ghost" type="button">Leave the vault</button>
+        </div>
+        <p class="hint">Keyboard: 0 to 9 to answer, C or Space to cash out.</p>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="over" class="over">
+    <h2 class="display" id="over-title">Vault locked</h2>
+    <p class="over__badge" id="over-badge" hidden>New personal best!</p>
+    <p class="over__label">You walked away with</p>
+    <p class="over__score" id="over-score">0</p>
+    <dl class="over__stats">
+      <div><dt>Best chain</dt><dd id="over-chain">0</dd></div>
+      <div><dt>Solved</dt><dd id="over-solved">0</dd></div>
+      <div><dt>Biggest cash-out</dt><dd id="over-cash">0</dd></div>
+    </dl>
+    <div class="over__actions">
+      <button id="over-again" class="btn btn--gold" type="button">Go again</button>
+      <button id="over-home" class="btn btn--ghost" type="button">Back home</button>
+    </div>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
